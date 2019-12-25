@@ -13,7 +13,6 @@ import sys
 import argparse
 
 from models import *
-from utils import progress_bar
 from tools import Logger
 
 ######################################################
@@ -26,7 +25,8 @@ end_epoch = 200 # end from epoch 400
 momentum = 0.9
 weight_decay = 5e-4
 steps = [50,100,150]
-data_root = './data'
+data_root = '../cifar10/data'
+batch_size = 128
 
 # write logs into pre-defined files
 sys.stdout = Logger('./log.txt')
@@ -48,10 +48,10 @@ transform_test = transforms.Compose([
 ])
 
 trainset = torchvision.datasets.CIFAR10(root=data_root, train=True, download=True, transform=transform_train)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 
 testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=True, transform=transform_test)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
+testloader = torch.utils.data.DataLoader(testset, batch_size=500, shuffle=False, num_workers=2)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -71,7 +71,7 @@ if device == 'cuda':
 # initial training enviroment, like criterion, optimizer, etc.
 print('==> Prepare training..')
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentun,
+optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum,
                       weight_decay=weight_decay)
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=steps)
 
@@ -96,7 +96,7 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+        print('[{}/{}]'.format(batch_idx,len(trainloader)), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 ######################################################
@@ -118,7 +118,7 @@ def test(epoch):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+            print('[{}/{}]'.format(batch_idx,len(testloader)), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                 % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     # Save checkpoint.
